@@ -1,0 +1,43 @@
+# Acoustic model: phoneme ids -> 80-bin log-mel spectrogram (FastSpeech2-style).
+
+encoder:
+  layers: 4
+  hidden: 256
+  heads: 2
+  conv_kernel: 9
+  dropout: 0.2
+
+variance:
+  durations: mfa          # targets from Montreal Forced Aligner TextGrids
+  pitch:
+    level: frame          # one value per mel frame
+    bins: 256
+  energy:
+    level: frame
+    bins: 256
+  predictor:
+    layers: 2
+    kernel: 3
+    dropout: 0.5
+
+decoder:
+  type: fft               # feed-forward Transformer blocks
+  layers: 6
+  hidden: 256
+  heads: 2
+  conv_kernel: 9
+  dropout: 0.2
+
+postnet:
+  layers: 5
+  channels: 512
+  kernel: 5
+
+audio:
+  sample_rate: 22050
+  n_fft: 1024
+  hop_length: 256
+  win_length: 1024
+  n_mels: 80
+  fmin: 0
+  fmax: 8000
