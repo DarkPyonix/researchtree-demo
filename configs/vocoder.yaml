@@ -1,0 +1,24 @@
+# Vocoder: HiFi-GAN V1 (13.9M generator parameters).
+
+generator:
+  type: hifigan
+  upsample_rates: [8, 8, 2, 2]
+  upsample_kernel_sizes: [16, 16, 4, 4]
+  upsample_initial_channel: 512
+  resblock_kernel_sizes: [3, 7, 11]
+  resblock_dilation_sizes: [[1, 3, 5], [1, 3, 5], [1, 3, 5]]
+
+discriminators: [mpd, msd]
+
+loss:
+  mel_weight: 45
+  feature_matching_weight: 2
+
+training:
+  batch_size: 16
+  segment_size: 8192
+  lr: 2.0e-4
+  betas: [0.8, 0.99]
+  lr_decay: 0.999
+  max_steps: 500000                  # on ground-truth mels
+  finetune_on_predicted_mels: 50000  # then on mels from the acoustic model
