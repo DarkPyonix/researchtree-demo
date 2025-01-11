@@ -1,0 +1,22 @@
+# Acoustic model training on one 24 GB GPU (about 3 days for 200k steps).
+
+batch_size: 32
+max_steps: 200000
+grad_clip: 1.0
+seed: 1234
+eval_every: 10000
+
+optimizer:
+  name: adam
+  lr: 1.0e-3            # peak learning rate, reached at the end of warmup
+  betas: [0.9, 0.98]
+
+scheduler:
+  name: noam
+  warmup_steps: 4000
+
+data:
+  root: data/LJSpeech-1.1
+  features: data/features
+  val_size: 100
+  test_size: 100
