@@ -20,6 +20,7 @@ import torch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from tinyspeech.audio import HOP, SAMPLE_RATE, energy, mel_spectrogram  # noqa: E402
+from tinyspeech.cwt import cwt_decompose  # noqa: E402
 
 OUT = Path("data/features")
 
@@ -70,6 +71,10 @@ def main() -> None:
     for clip, item in items.items():
         for k, (mean, std) in norm.items():
             item[k] = (item[k] - mean) / std
+        # Pitch as wavelet coefficients of the contour, normalized per utterance.
+        p = item["pitch"]
+        item["pitch_stats"] = np.array([p.mean(), p.std()], dtype=np.float32)
+        item["pitch_cwt"] = cwt_decompose((p - p.mean()) / p.std())
         np.savez(OUT / f"{clip}.npz", **item)
 
 
