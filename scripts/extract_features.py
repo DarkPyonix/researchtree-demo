@@ -43,6 +43,13 @@ def log_f0(wav: np.ndarray, n_frames: int) -> np.ndarray:
     return lf0.astype(np.float32)
 
 
+def phoneme_average(values: np.ndarray, durations: np.ndarray) -> np.ndarray:
+    """Mean of a per-frame contour over each phoneme's frames (0 for zero-length phonemes)."""
+    ends = np.cumsum(durations)
+    starts = ends - durations
+    return np.array([values[s:e].mean() if e > s else 0.0 for s, e in zip(starts, ends)], dtype=np.float32)
+
+
 def main() -> None:
     OUT.mkdir(parents=True, exist_ok=True)
     stats: dict[str, list[np.ndarray]] = {"pitch": [], "energy": []}
@@ -69,7 +76,7 @@ def main() -> None:
     np.save(OUT / "stats.npy", norm)
     for clip, item in items.items():
         for k, (mean, std) in norm.items():
-            item[k] = (item[k] - mean) / std
+            item[k] = phoneme_average((item[k] - mean) / std, item["duration"])
         np.savez(OUT / f"{clip}.npz", **item)
 
 
