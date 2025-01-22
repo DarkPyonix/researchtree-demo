@@ -52,6 +52,7 @@ class VarianceAdaptor(nn.Module):
     def __init__(self, cfg: dict, hidden: int):
         super().__init__()
         self.duration = VariancePredictor(hidden, **cfg["predictor"])
+        self.use_pitch = cfg["pitch"].get("enabled", True)
         self.pitch = VariancePredictor(hidden, **cfg["predictor"])
         self.energy = VariancePredictor(hidden, **cfg["predictor"])
         # Pitch and energy are normalized to zero mean and unit variance over the corpus.
@@ -73,6 +74,9 @@ class VarianceAdaptor(nn.Module):
         energy_pred = self.energy(x, mel_mask)
         p = pitch if pitch is not None else pitch_pred
         e = energy if energy is not None else energy_pred
-        x = x + self.pitch_embed(torch.bucketize(p, self.pitch_bins))
+        # With pitch disabled the predictor still trains, so its error can be compared, but
+        # its output is not added to the hidden states.
+        if self.use_pitch:
+            x = x + self.pitch_embed(torch.bucketize(p, self.pitch_bins))
         x = x + self.energy_embed(torch.bucketize(e, self.energy_bins))
         return VarianceOutput(x, mel_mask, log_duration, pitch_pred, energy_pred)
