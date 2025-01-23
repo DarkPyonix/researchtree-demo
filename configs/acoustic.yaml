@@ -10,7 +10,8 @@ encoder:
 variance:
   durations: mfa          # targets from Montreal Forced Aligner TextGrids
   pitch:
-    level: frame          # one value per mel frame
+    level: cwt            # wavelet coefficients per mel frame
+    scales: 10
     bins: 256
   energy:
     level: frame

@@ -7,23 +7,27 @@ from dataclasses import dataclass
 import torch
 from torch import nn
 
+from ..cwt import cwt_reconstruct
+
 
 class VariancePredictor(nn.Module):
     """Two 1D convolutions (ReLU, layer norm, dropout), then a linear layer: one value per step."""
 
-    def __init__(self, hidden: int, layers: int = 2, kernel: int = 3, dropout: float = 0.5):
+    def __init__(self, hidden: int, layers: int = 2, kernel: int = 3, dropout: float = 0.5, out_dim: int = 1):
         super().__init__()
         self.convs = nn.ModuleList(nn.Conv1d(hidden, hidden, kernel, padding=kernel // 2) for _ in range(layers))
         self.norms = nn.ModuleList(nn.LayerNorm(hidden) for _ in range(layers))
         self.dropout = nn.Dropout(dropout)
-        self.out = nn.Linear(hidden, 1)
+        self.out = nn.Linear(hidden, out_dim)
+        self.out_dim = out_dim
 
     def forward(self, x: torch.Tensor, mask: torch.Tensor) -> torch.Tensor:
         # x: (batch, time, hidden); mask: True at padded steps.
         for conv, norm in zip(self.convs, self.norms):
             x = conv(x.transpose(1, 2)).transpose(1, 2)
             x = self.dropout(norm(torch.relu(x)))
-        return self.out(x).squeeze(-1).masked_fill(mask, 0.0)
+        y = self.out(x).masked_fill(mask.unsqueeze(-1), 0.0)
+        return y.squeeze(-1) if self.out_dim == 1 else y
 
 
 class LengthRegulator(nn.Module):
@@ -52,7 +56,10 @@ class VarianceAdaptor(nn.Module):
     def __init__(self, cfg: dict, hidden: int):
         super().__init__()
         self.duration = VariancePredictor(hidden, **cfg["predictor"])
-        self.pitch = VariancePredictor(hidden, **cfg["predictor"])
+        # Pitch: 10 wavelet coefficients per frame, plus the utterance's pitch mean and spread
+        # predicted from the average encoder state.
+        self.pitch = VariancePredictor(hidden, out_dim=cfg["pitch"]["scales"], **cfg["predictor"])
+        self.pitch_stats = nn.Linear(hidden, 2)
         self.energy = VariancePredictor(hidden, **cfg["predictor"])
         # Pitch and energy are normalized to zero mean and unit variance over the corpus.
         self.register_buffer("pitch_bins", torch.linspace(-3.0, 3.0, cfg["pitch"]["bins"] - 1))
@@ -69,7 +76,8 @@ class VarianceAdaptor(nn.Module):
         x, mel_mask = self.regulate(x, durations)
 
         # Pitch and energy are predicted per mel frame, after the length regulator.
-        pitch_pred = self.pitch(x, mel_mask)
+        stats = self.pitch_stats(x.mean(1))  # (batch, 2): mean and spread of the contour
+        pitch_pred = cwt_reconstruct(self.pitch(x, mel_mask)) * stats[:, 1:] + stats[:, :1]
         energy_pred = self.energy(x, mel_mask)
         p = pitch if pitch is not None else pitch_pred
         e = energy if energy is not None else energy_pred
