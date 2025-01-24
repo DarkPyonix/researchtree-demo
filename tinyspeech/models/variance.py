@@ -47,7 +47,7 @@ class VarianceOutput:
 
 
 class VarianceAdaptor(nn.Module):
-    """Predict durations, expand to frames, then add quantized pitch and energy embeddings."""
+    """Predict durations, add quantized pitch and energy embeddings per phoneme, then expand to frames."""
 
     def __init__(self, cfg: dict, hidden: int):
         super().__init__()
@@ -66,13 +66,13 @@ class VarianceAdaptor(nn.Module):
         if durations is None:
             durations = torch.clamp(torch.round(torch.exp(log_duration) - 1), min=1).long()
             durations = durations.masked_fill(mask, 0)
-        x, mel_mask = self.regulate(x, durations)
-
-        # Pitch and energy are predicted per mel frame, after the length regulator.
-        pitch_pred = self.pitch(x, mel_mask)
-        energy_pred = self.energy(x, mel_mask)
+        # Pitch and energy are predicted per phoneme, before the length regulator, so every
+        # frame of a phoneme gets the same pitch and energy embedding.
+        pitch_pred = self.pitch(x, mask)
+        energy_pred = self.energy(x, mask)
         p = pitch if pitch is not None else pitch_pred
         e = energy if energy is not None else energy_pred
         x = x + self.pitch_embed(torch.bucketize(p, self.pitch_bins))
         x = x + self.energy_embed(torch.bucketize(e, self.energy_bins))
+        x, mel_mask = self.regulate(x, durations)
         return VarianceOutput(x, mel_mask, log_duration, pitch_pred, energy_pred)

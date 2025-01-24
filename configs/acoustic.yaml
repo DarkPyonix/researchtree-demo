@@ -10,10 +10,10 @@ encoder:
 variance:
   durations: mfa          # targets from Montreal Forced Aligner TextGrids
   pitch:
-    level: frame          # one value per mel frame
+    level: phoneme        # one value per phoneme
     bins: 256
   energy:
-    level: frame
+    level: phoneme
     bins: 256
   predictor:
     layers: 2
