@@ -10,6 +10,7 @@ import torch
 from torch.utils.data import Dataset
 
 from .text import phonemize
+from .text.frontend import characterize
 from .text.cmudict import CMUDict
 
 
@@ -39,7 +40,7 @@ class LJSpeech(Dataset):
         clip, _, text = self.items[index]
         f = np.load(self.features / f"{clip}.npz")
         return {
-            "ids": torch.tensor(phonemize(text, self.lexicon).ids),
+            "ids": torch.tensor((characterize(text) if self.lexicon is None else phonemize(text, self.lexicon)).ids),
             "mel": torch.from_numpy(f["mel"]),            # (frames, n_mels)
             "duration": torch.from_numpy(f["duration"]),  # frames per phoneme
             "pitch": torch.from_numpy(f["pitch"]),        # normalized log-F0 per frame
