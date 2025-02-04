@@ -72,7 +72,7 @@ def main() -> None:
             sched.step()
             step += 1
             if step % 100 == 0:
-                wandb.log({f"train/{k}": x.item() for k, x in losses.items()}, step=step)
+                wandb.log({**{f"train/{k}": x.item() for k, x in losses.items()}, "train/lr": sched.get_last_lr()[0]}, step=step)
             if step % tcfg["eval_every"] == 0:
                 wandb.log({f"val/{k}": x for k, x in evaluate(model, val_ids, test_ids=None).items()}, step=step)
                 torch.save(model.state_dict(), f"checkpoints/{args.run_name}.pt")
