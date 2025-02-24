@@ -12,6 +12,7 @@ variance:
   pitch:
     level: phoneme        # one value per phoneme
     bins: 256
+    log_f0_std: 0.183     # corpus standard deviation of log-F0 (data/features/stats.npy)
   energy:
     level: phoneme
     bins: 256
