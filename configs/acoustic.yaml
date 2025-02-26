@@ -12,9 +12,6 @@ variance:
   pitch:
     level: phoneme        # one value per phoneme
     bins: 256
-  energy:
-    level: phoneme
-    bins: 256
   predictor:
     layers: 2
     kernel: 3

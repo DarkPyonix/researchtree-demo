@@ -53,12 +53,9 @@ class VarianceAdaptor(nn.Module):
         super().__init__()
         self.duration = VariancePredictor(hidden, **cfg["predictor"])
         self.pitch = VariancePredictor(hidden, **cfg["predictor"])
-        self.energy = VariancePredictor(hidden, **cfg["predictor"])
         # Pitch and energy are normalized to zero mean and unit variance over the corpus.
         self.register_buffer("pitch_bins", torch.linspace(-3.0, 3.0, cfg["pitch"]["bins"] - 1))
-        self.register_buffer("energy_bins", torch.linspace(-3.0, 3.0, cfg["energy"]["bins"] - 1))
         self.pitch_embed = nn.Embedding(cfg["pitch"]["bins"], hidden)
-        self.energy_embed = nn.Embedding(cfg["energy"]["bins"], hidden)
         self.regulate = LengthRegulator()
 
     def forward(self, x, mask, durations=None, pitch=None, energy=None) -> VarianceOutput:
@@ -69,10 +66,8 @@ class VarianceAdaptor(nn.Module):
         # Pitch and energy are predicted per phoneme, before the length regulator, so every
         # frame of a phoneme gets the same pitch and energy embedding.
         pitch_pred = self.pitch(x, mask)
-        energy_pred = self.energy(x, mask)
+        energy_pred = torch.zeros_like(pitch_pred)  # energy is not modeled
         p = pitch if pitch is not None else pitch_pred
-        e = energy if energy is not None else energy_pred
         x = x + self.pitch_embed(torch.bucketize(p, self.pitch_bins))
-        x = x + self.energy_embed(torch.bucketize(e, self.energy_bins))
         x, mel_mask = self.regulate(x, durations)
         return VarianceOutput(x, mel_mask, log_duration, pitch_pred, energy_pred)
