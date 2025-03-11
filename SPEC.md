@@ -39,10 +39,9 @@ The parts run in this order: encoder, duration predictor, pitch and energy, leng
 ### Variance adaptor
 <!-- id: variance-adaptor -->
 
-> Adds predicted pitch and energy to the hidden states, one value per phoneme, before the length regulator.
+> Adds predicted pitch to the hidden states, one value per phoneme, before the length regulator. Energy is not modeled.
 
 - Pitch: log-F0 from WORLD (DIO and StoneMask), interpolated through unvoiced frames, normalized with the corpus mean and standard deviation, then averaged over the frames of each phoneme.
-- Energy: L2 norm of each STFT frame, normalized and averaged per phoneme the same way.
 - One predictor each, with the same shape as the duration predictor, running on the encoder output.
 - Each value is quantized into 256 bins and the bin's embedding is added to the phoneme's hidden vector, so all frames of a phoneme share it.
 - Training uses the measured pitch and energy. Inference uses the predictions.
