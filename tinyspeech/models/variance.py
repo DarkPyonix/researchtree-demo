@@ -62,10 +62,14 @@ class VarianceAdaptor(nn.Module):
         self.energy_embed = nn.Embedding(cfg["energy"]["bins"], hidden)
         self.regulate = LengthRegulator()
         self.log_f0_std = cfg["pitch"]["log_f0_std"]
+        self.pitch_min, self.pitch_max = cfg["pitch"]["clamp"]
 
     def shift_pitch(self, p: torch.Tensor, scale: float) -> torch.Tensor:
-        """Multiply F0 by `scale`. p is normalized log-F0, so this adds log(scale) / std."""
-        return p + math.log(scale) / self.log_f0_std
+        """Multiply F0 by `scale`. p is normalized log-F0, so this adds log(scale) / std.
+
+        The result is kept inside the speaker's range: pitch pushed below it makes the vocoder buzz.
+        """
+        return torch.clamp(p + math.log(scale) / self.log_f0_std, self.pitch_min, self.pitch_max)
 
     def forward(self, x, mask, durations=None, pitch=None, energy=None, pitch_scale: float = 1.0) -> VarianceOutput:
         log_duration = self.duration(x, mask)
