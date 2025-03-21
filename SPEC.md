@@ -58,6 +58,16 @@ The parts run in this order: encoder, duration predictor, pitch and energy, leng
 
 <!-- include: docs/spec/vocoder.md -->
 
+## Inference controls
+
+> A user can shift the pitch of a whole sentence with one factor, `pitch_scale`, between 0.8 and 1.2.
+
+- `pitch_scale` multiplies the predicted F0 of every phoneme. Because pitch is stored as normalized log-F0, this adds log(pitch_scale) divided by the corpus standard deviation of log-F0 (0.183).
+- The shifted value is clamped to the 2nd to 98th percentile of the speaker's normalized phoneme pitch ([-2.1, 2.6]), so no phoneme leaves the speaker's range.
+- The measured pitch is never scaled, so training is unaffected.
+- Command line: `python synthesize.py "text" --pitch-scale 1.1`.
+- Evidence: experiment/pitch-control-range (#6), experiment/pitch-scale-clamp (#8).
+
 ## Training
 
 > The acoustic model trains for 200k steps at batch size 32 on one 24 GB GPU, which takes about 3 days.

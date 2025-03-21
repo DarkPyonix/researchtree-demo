@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass
 
 import torch
@@ -60,8 +61,17 @@ class VarianceAdaptor(nn.Module):
         self.pitch_embed = nn.Embedding(cfg["pitch"]["bins"], hidden)
         self.energy_embed = nn.Embedding(cfg["energy"]["bins"], hidden)
         self.regulate = LengthRegulator()
+        self.log_f0_std = cfg["pitch"]["log_f0_std"]
+        self.pitch_min, self.pitch_max = cfg["pitch"]["clamp"]
 
-    def forward(self, x, mask, durations=None, pitch=None, energy=None) -> VarianceOutput:
+    def shift_pitch(self, p: torch.Tensor, scale: float) -> torch.Tensor:
+        """Multiply F0 by `scale`. p is normalized log-F0, so this adds log(scale) / std.
+
+        The result is kept inside the speaker's range: pitch pushed below it makes the vocoder buzz.
+        """
+        return torch.clamp(p + math.log(scale) / self.log_f0_std, self.pitch_min, self.pitch_max)
+
+    def forward(self, x, mask, durations=None, pitch=None, energy=None, pitch_scale: float = 1.0) -> VarianceOutput:
         log_duration = self.duration(x, mask)
         if durations is None:
             durations = torch.clamp(torch.round(torch.exp(log_duration) - 1), min=1).long()
@@ -71,6 +81,8 @@ class VarianceAdaptor(nn.Module):
         pitch_pred = self.pitch(x, mask)
         energy_pred = self.energy(x, mask)
         p = pitch if pitch is not None else pitch_pred
+        if pitch is None and pitch_scale != 1.0:
+            p = self.shift_pitch(p, pitch_scale)
         e = energy if energy is not None else energy_pred
         x = x + self.pitch_embed(torch.bucketize(p, self.pitch_bins))
         x = x + self.energy_embed(torch.bucketize(e, self.energy_bins))

@@ -49,6 +49,10 @@ def evaluate(model, val_ids: list[str], test_ids: list[str] | None) -> dict[str,
             cer.append(character_error_rate(whisper_transcribe(wav), normalized))
         out.update(mcd=round(float(np.mean(mcd)), 2), utmos=round(float(np.mean(mos)), 2),
                    cer=round(100 * float(np.mean(cer)), 1), rtf=round(float(np.median(rtf)), 2))
+        # Pitch control (claim N2): naturalness with F0 shifted down and up by 20%.
+        for key, scale in (("utmos_pitch_down20", 0.8), ("utmos_pitch_up20", 1.2)):
+            scores = [utmos_score(synth(rows[c][1], pitch_scale=scale)) for c in test_ids]
+            out[key] = round(float(np.mean(scores)), 2)
         model.cuda()
     model.train()
     return out
