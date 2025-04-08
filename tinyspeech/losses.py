@@ -22,6 +22,7 @@ def acoustic_loss(batch: dict, mel, mel_post, v) -> dict[str, torch.Tensor]:
         "mel_post": masked_mean((mel_post - target).abs(), batch["mel_mask"]),
         "duration": masked_mean(F.mse_loss(v.log_duration, torch.log(batch["duration"].float() + 1), reduction="none"), batch["id_mask"]),
         "pitch": masked_mean(F.mse_loss(v.pitch, batch["pitch"], reduction="none"), batch["id_mask"]),
+        "energy": masked_mean(F.mse_loss(v.energy, batch["energy"], reduction="none"), batch["id_mask"]),
     }
     losses["total"] = sum(losses.values())
     return losses
