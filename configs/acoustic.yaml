@@ -10,7 +10,6 @@ encoder:
 variance:
   durations: mfa          # targets from Montreal Forced Aligner TextGrids
   pitch:
-    enabled: false        # energy only
     level: frame          # one value per mel frame
     bins: 256
   energy:

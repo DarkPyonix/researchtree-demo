@@ -39,7 +39,7 @@ The parts run in this order: encoder, duration predictor, length regulator, pitc
 ### Variance adaptor
 <!-- id: variance-adaptor -->
 
-> Adds predicted energy to the hidden states, one value per mel frame. Pitch is not predicted; the decoder infers it from the phonemes and energy.
+> Adds predicted pitch and energy to the hidden states, one value per mel frame.
 
 - Pitch: log-F0 from WORLD (DIO and StoneMask), interpolated through unvoiced frames and normalized with the corpus mean and standard deviation.
 - Energy: L2 norm of each STFT frame, normalized the same way.
