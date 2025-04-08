@@ -41,7 +41,7 @@ The parts run in this order: encoder, duration predictor, length regulator, pitc
 
 > Adds predicted pitch and energy to the hidden states, one value per mel frame.
 
-- Pitch: log-F0 from WORLD (DIO and StoneMask), interpolated through unvoiced frames. The pitch predictor outputs a 10-scale continuous wavelet transform of the contour per frame, plus the utterance's pitch mean and standard deviation; the contour is rebuilt from them.
+- Pitch: log-F0 from WORLD (DIO and StoneMask), interpolated through unvoiced frames and normalized with the corpus mean and standard deviation.
 - Energy: L2 norm of each STFT frame, normalized the same way.
 - One predictor each, with the same shape as the duration predictor, running after the length regulator.
 - Each value is quantized into 256 bins and the bin's embedding is added to the hidden states.
