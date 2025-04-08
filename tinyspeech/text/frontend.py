@@ -6,7 +6,7 @@ import re
 from dataclasses import dataclass
 
 from .cmudict import CMUDict
-from .symbols import CHAR_TO_ID, PUNCTUATION, SPACE, SYMBOL_TO_ID
+from .symbols import PUNCTUATION, SPACE, SYMBOL_TO_ID
 
 _WHITESPACE = re.compile(r"\s+")
 _TOKEN = re.compile(r"[a-z']+|\d|[,.?!;:]")
@@ -48,27 +48,6 @@ def phonemize(text: str, lexicon: CMUDict) -> Phonemized:
         phones = lexicon.lookup(token) or spell_out(token, lexicon)
         ids.extend(SYMBOL_TO_ID[p] for p in phones)
         word_ids.extend([len(words)] * len(phones))
-        words.append(token)
-    return Phonemized(ids, word_ids, words)
-
-
-def characterize(text: str) -> Phonemized:
-    """Character input: one id per letter, word gaps and punctuation as in phonemize()."""
-    ids: list[int] = []
-    word_ids: list[int] = []
-    words: list[str] = []
-    for token in _TOKEN.findall(normalize(text)):
-        if token in PUNCTUATION:
-            ids.append(CHAR_TO_ID[token])
-            word_ids.append(-1)
-            continue
-        if token.isdigit():
-            token = _DIGITS[int(token)]
-        if words:
-            ids.append(CHAR_TO_ID[SPACE])
-            word_ids.append(-1)
-        ids.extend(CHAR_TO_ID[c] for c in token)
-        word_ids.extend([len(words)] * len(token))
         words.append(token)
     return Phonemized(ids, word_ids, words)
 

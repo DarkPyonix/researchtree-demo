@@ -1,8 +1,5 @@
 # Acoustic model: phoneme ids -> 80-bin log-mel spectrogram (FastSpeech2-style).
 
-text:
-  input: characters       # or: phonemes
-
 encoder:
   layers: 4
   hidden: 256

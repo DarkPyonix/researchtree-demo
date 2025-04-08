@@ -16,8 +16,3 @@ PHONEMES = [p + s for p in _ARPABET for s in (("0", "1", "2") if p in _VOWELS el
 
 SYMBOLS = [PAD, SPACE, *PUNCTUATION, *PHONEMES]
 SYMBOL_TO_ID = {s: i for i, s in enumerate(SYMBOLS)}
-
-# Character input: letters and apostrophe, used instead of phonemes when text.input is "characters".
-LETTERS = list("abcdefghijklmnopqrstuvwxyz'")
-CHAR_SYMBOLS = [PAD, SPACE, *PUNCTUATION, *LETTERS]
-CHAR_TO_ID = {s: i for i, s in enumerate(CHAR_SYMBOLS)}

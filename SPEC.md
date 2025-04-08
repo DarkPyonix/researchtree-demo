@@ -4,7 +4,7 @@
 
 ## Text frontend
 
-> Raw English text is lowercased, split into words and punctuation, and fed to the model as characters. No pronunciation dictionary is used.
+> Raw English text is lowercased, split into words and punctuation, and converted to ARPAbet phonemes with CMUdict.
 
 - Normalization: lowercase, curly quotes replaced with straight quotes, runs of whitespace collapsed to one space.
 - Numbers are not expanded: each digit is read on its own ("1963" is read "one nine six three").
