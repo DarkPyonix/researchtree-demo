@@ -13,7 +13,7 @@ optimizer:
 
 scheduler:
   name: noam
-  warmup_steps: 8000
+  warmup_steps: 4000
 
 data:
   root: data/LJSpeech-1.1
