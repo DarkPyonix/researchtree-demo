@@ -17,7 +17,7 @@
 
 > A non-autoregressive FastSpeech2-style model maps phoneme ids to an 80-bin log-mel spectrogram in one forward pass.
 
-The parts run in this order: encoder, duration predictor, length regulator, pitch and energy, decoder, postnet. Sizes are in `configs/acoustic.yaml`. Code: `tinyspeech/models/fastspeech2.py` and `tinyspeech/models/variance.py`.
+The parts run in this order: encoder, duration predictor, pitch and energy, length regulator, decoder, postnet. Sizes are in `configs/acoustic.yaml`. Code: `tinyspeech/models/fastspeech2.py` and `tinyspeech/models/variance.py`.
 
 ### Encoder
 
@@ -39,13 +39,14 @@ The parts run in this order: encoder, duration predictor, length regulator, pitc
 ### Variance adaptor
 <!-- id: variance-adaptor -->
 
-> Adds predicted pitch and energy to the hidden states, one value per mel frame.
+> Adds predicted pitch and energy to the hidden states, one value per phoneme, before the length regulator.
 
-- Pitch: log-F0 from WORLD (DIO and StoneMask), interpolated through unvoiced frames and normalized with the corpus mean and standard deviation.
-- Energy: L2 norm of each STFT frame, normalized the same way.
-- One predictor each, with the same shape as the duration predictor, running after the length regulator.
-- Each value is quantized into 256 bins and the bin's embedding is added to the hidden states.
+- Pitch: log-F0 from WORLD (DIO and StoneMask), interpolated through unvoiced frames, normalized with the corpus mean and standard deviation, then averaged over the frames of each phoneme.
+- Energy: L2 norm of each STFT frame, normalized and averaged per phoneme the same way.
+- One predictor each, with the same shape as the duration predictor, running on the encoder output.
+- Each value is quantized into 256 bins and the bin's embedding is added to the phoneme's hidden vector, so all frames of a phoneme share it.
 - Training uses the measured pitch and energy. Inference uses the predictions.
+- Evidence: experiment/pitch-phoneme-level (#2), compared with experiment/pitch-cwt (#1) and experiment/energy-only (#3).
 
 ### Decoder
 
@@ -56,6 +57,16 @@ The parts run in this order: encoder, duration predictor, length regulator, pitc
 > Five 1D convolutions (512 channels, kernel 5) predict a correction that is added to the decoder's mel output.
 
 <!-- include: docs/spec/vocoder.md -->
+
+## Inference controls
+
+> A user can shift the pitch of a whole sentence with one factor, `pitch_scale`, between 0.8 and 1.2.
+
+- `pitch_scale` multiplies the predicted F0 of every phoneme. Because pitch is stored as normalized log-F0, this adds log(pitch_scale) divided by the corpus standard deviation of log-F0 (0.183).
+- The shifted value is clamped to the 2nd to 98th percentile of the speaker's normalized phoneme pitch ([-2.1, 2.6]), so no phoneme leaves the speaker's range.
+- The measured pitch is never scaled, so training is unaffected.
+- Command line: `python synthesize.py "text" --pitch-scale 1.1`.
+- Evidence: experiment/pitch-control-range (#6), experiment/pitch-scale-clamp (#8).
 
 ## Training
 

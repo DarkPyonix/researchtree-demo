@@ -37,5 +37,4 @@ Each claim is one sentence that an experiment can support or refute. An experime
 
 ## Open decisions
 
-- **D1:** Should pitch be predicted once per mel frame or once per phoneme? The answer decides how pitch control (N2) is built.
 - **D2:** Which vocoder ships: HiFi-GAN V1, a smaller HiFi-GAN, or a different design? The answer decides whether we can meet the speed goal (N3).

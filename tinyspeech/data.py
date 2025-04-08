@@ -42,8 +42,8 @@ class LJSpeech(Dataset):
             "ids": torch.tensor(phonemize(text, self.lexicon).ids),
             "mel": torch.from_numpy(f["mel"]),            # (frames, n_mels)
             "duration": torch.from_numpy(f["duration"]),  # frames per phoneme
-            "pitch": torch.from_numpy(f["pitch"]),        # normalized log-F0 per frame
-            "energy": torch.from_numpy(f["energy"]),      # normalized energy per frame
+            "pitch": torch.from_numpy(f["pitch"]),        # normalized log-F0 per phoneme
+            "energy": torch.from_numpy(f["energy"]),      # normalized energy per phoneme
         }
 
 
