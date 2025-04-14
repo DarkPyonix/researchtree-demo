@@ -96,9 +96,12 @@ class FastSpeech2(nn.Module):
         self.to_mel = nn.Linear(cfg["decoder"]["hidden"], n_mels)
         self.postnet = Postnet(n_mels, **cfg["postnet"])
 
-    def forward(self, ids, id_mask, durations=None, pitch=None, energy=None, pitch_scale: float = 1.0):
+    def forward(self, ids, id_mask, durations=None, pitch=None, energy=None, pitch_scale: float = 1.0,
+                mel=None, mel_mask=None, prior=None):
+        """With `mel` (training), durations come from the learned alignment; without it, from the predictor."""
         x = self.encoder(self.embed(ids), id_mask)
-        v = self.variance(x, id_mask, durations, pitch, energy, pitch_scale=pitch_scale)
+        v = self.variance(x, id_mask, durations, pitch, energy, pitch_scale=pitch_scale,
+                          mel=mel, mel_mask=mel_mask, prior=prior)
         mel = self.to_mel(self.decoder(v.hidden, v.mel_mask))
         mel_post = mel + self.postnet(mel)
         return mel, mel_post, v

@@ -8,7 +8,7 @@ encoder:
   dropout: 0.2
 
 variance:
-  durations: mfa          # targets from Montreal Forced Aligner TextGrids
+  durations: learned      # targets from the model's own alignment (tinyspeech/models/aligner.py)
   pitch:
     level: phoneme        # one value per phoneme
     bins: 256
