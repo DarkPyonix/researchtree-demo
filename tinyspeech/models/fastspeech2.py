@@ -61,6 +61,10 @@ class FFTStack(nn.Module):
 def build_decoder(cfg: dict) -> nn.Module:
     if cfg["type"] == "fft":
         return FFTStack(**cfg)
+    if cfg["type"] == "conformer":
+        from .conformer import ConformerStack  # conformer.py imports this module, so import it late
+
+        return ConformerStack(**cfg)
     raise ValueError(f"unknown decoder type: {cfg['type']}")
 
 

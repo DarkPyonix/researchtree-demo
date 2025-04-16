@@ -23,11 +23,12 @@ variance:
     dropout: 0.5
 
 decoder:
-  type: fft               # feed-forward Transformer blocks
+  type: conformer         # Conformer blocks
   layers: 6
   hidden: 256
   heads: 2
-  conv_kernel: 9
+  conv_kernel: 31         # depthwise convolution
+  ff_mult: 4
   dropout: 0.2
 
 postnet:
