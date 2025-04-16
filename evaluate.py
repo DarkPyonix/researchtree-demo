@@ -26,7 +26,8 @@ def validation_mel_l1(model, val_ids: list[str]) -> float:
     total, frames = 0.0, 0
     for item in ds:
         batch = {k: v.cuda() for k, v in collate([item]).items()}
-        _, mel_post, _ = model(batch["ids"], batch["id_mask"], batch["duration"], batch["pitch"], batch["energy"])
+        _, mel_post, _ = model(batch["ids"], batch["id_mask"], pitch=batch["pitch"], energy=batch["energy"],
+                               mel=batch["mel"], mel_mask=batch["mel_mask"])
         total += (mel_post - batch["mel"]).abs().sum().item() / batch["mel"].shape[-1]
         frames += batch["mel"].shape[1]
     return total / frames

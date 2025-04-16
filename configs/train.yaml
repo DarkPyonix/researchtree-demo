@@ -20,3 +20,7 @@ data:
   features: data/features
   val_size: 100
   test_size: 100
+
+aligner:
+  prior_steps: 8000      # use the beta-binomial prior for the first 8,000 steps
+  bin_loss_start: 0      # step at which the binarization loss is switched on
