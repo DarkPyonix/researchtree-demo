@@ -29,7 +29,8 @@ The parts run in this order: encoder, duration predictor, pitch and energy, leng
 > Predicts how many mel frames each phoneme lasts. It is trained on durations from Montreal Forced Aligner.
 
 - Two 1D convolutions (kernel 3) and a linear layer. It predicts log(frames + 1) and is trained with mean squared error.
-- Training targets come from Montreal Forced Aligner 2.0 with the `english_us_arpa` acoustic model, converted to frame counts at hop size 256. Clips that the aligner fails on are left out of training.
+- Training targets come from Montreal Forced Aligner 2.0 with the `english_us_arpa` acoustic model, converted to frame counts at hop size 256.
+- MFA uses CMUdict plus a pronunciation from the g2p_en model for every word missing from CMUdict (`scripts/prepare_mfa_lexicon.py`). Clips that still fail to align are left out of training.
 - At inference the prediction is rounded to whole frames, at least 1 frame per phoneme.
 
 ### Length regulator
