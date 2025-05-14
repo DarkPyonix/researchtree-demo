@@ -22,5 +22,5 @@ data:
   test_size: 100
 
 aligner:
-  prior_steps: 8000      # use the beta-binomial prior for the first 8,000 steps
+  prior_steps: 2000      # use the beta-binomial prior for the first 2,000 steps
   bin_loss_start: 0      # step at which the binarization loss is switched on
