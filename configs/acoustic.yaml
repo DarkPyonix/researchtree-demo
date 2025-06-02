@@ -24,7 +24,7 @@ variance:
 
 decoder:
   type: conformer         # Conformer blocks
-  layers: 4
+  layers: 3
   hidden: 256
   heads: 2
   conv_kernel: 31         # depthwise convolution
