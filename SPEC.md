@@ -50,12 +50,12 @@ The parts run in this order: encoder, duration predictor, pitch and energy, leng
 
 ### Decoder
 
-> Six Conformer blocks (hidden size 256, 2 attention heads, depthwise convolution kernel 31), then a linear layer to 80 mel bins.
+> Four Conformer blocks (hidden size 256, 2 attention heads, depthwise convolution kernel 31), then a linear layer to 80 mel bins.
 
 - Each block: half-step feed-forward, self-attention, convolution module, half-step feed-forward, layer norm.
 - Convolution module: pointwise convolution with GLU, depthwise convolution, batch norm, SiLU, pointwise convolution.
 - Code: `tinyspeech/models/conformer.py`.
-- Evidence: experiment/conformer-decoder (#11).
+- Evidence: experiment/conformer-decoder (#11), experiment/conformer-4-layers (#15).
 
 ### Postnet
 
