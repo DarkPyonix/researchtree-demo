@@ -33,7 +33,8 @@ class ConvModule(nn.Module):
         self.dropout = nn.Dropout(dropout)
 
     def forward(self, x: torch.Tensor, mask: torch.Tensor) -> torch.Tensor:
-        y = self.norm(x).transpose(1, 2)
+        # Padded frames must be zero, or the depthwise convolution leaks them into real frames.
+        y = self.norm(x).masked_fill(mask.unsqueeze(-1), 0.0).transpose(1, 2)
         y = nn.functional.glu(self.pointwise1(y), dim=1)
         y = self.pointwise2(torch.nn.functional.silu(self.bn(self.depthwise(y))))
         return self.dropout(y.transpose(1, 2))
