@@ -27,7 +27,7 @@ decoder:
   layers: 6
   hidden: 256
   heads: 2
-  conv_kernel: 7          # depthwise convolution
+  conv_kernel: 31         # depthwise convolution
   ff_mult: 4
   dropout: 0.2
 
