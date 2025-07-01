@@ -94,13 +94,13 @@ class FastSpeech2(nn.Module):
         self.variance = VarianceAdaptor(cfg["variance"], hidden)
         self.decoder = build_decoder(cfg["decoder"])
         self.to_mel = nn.Linear(cfg["decoder"]["hidden"], n_mels)
-        self.postnet = Postnet(n_mels, **cfg["postnet"]) if cfg.get("postnet") else None
+        self.postnet = Postnet(n_mels, **cfg["postnet"])
 
     def forward(self, ids, id_mask, durations=None, pitch=None, energy=None, pitch_scale: float = 1.0):
         x = self.encoder(self.embed(ids), id_mask)
         v = self.variance(x, id_mask, durations, pitch, energy, pitch_scale=pitch_scale)
         mel = self.to_mel(self.decoder(v.hidden, v.mel_mask))
-        mel_post = mel + self.postnet(mel) if self.postnet is not None else mel
+        mel_post = mel + self.postnet(mel)
         return mel, mel_post, v
 
     @torch.no_grad()

@@ -30,7 +30,10 @@ decoder:
   conv_kernel: 9
   dropout: 0.2
 
-postnet: null            # no postnet
+postnet:
+  layers: 5
+  channels: 512
+  kernel: 5
 
 audio:
   sample_rate: 22050

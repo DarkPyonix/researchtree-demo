@@ -17,7 +17,7 @@
 
 > A non-autoregressive FastSpeech2-style model maps phoneme ids to an 80-bin log-mel spectrogram in one forward pass.
 
-The parts run in this order: encoder, duration predictor, pitch and energy, length regulator, decoder. Sizes are in `configs/acoustic.yaml`. Code: `tinyspeech/models/fastspeech2.py` and `tinyspeech/models/variance.py`.
+The parts run in this order: encoder, duration predictor, pitch and energy, length regulator, decoder, postnet. Sizes are in `configs/acoustic.yaml`. Code: `tinyspeech/models/fastspeech2.py` and `tinyspeech/models/variance.py`.
 
 ### Encoder
 
@@ -52,6 +52,10 @@ The parts run in this order: encoder, duration predictor, pitch and energy, leng
 
 > Six feed-forward Transformer blocks of the same size as the encoder, then a linear layer to 80 mel bins.
 
+### Postnet
+
+> Five 1D convolutions (512 channels, kernel 5) predict a correction that is added to the decoder's mel output.
+
 <!-- include: docs/spec/vocoder.md -->
 
 ## Inference controls
@@ -68,7 +72,7 @@ The parts run in this order: encoder, duration predictor, pitch and energy, leng
 
 > The acoustic model trains for 200k steps at batch size 32 on one 24 GB GPU, which takes about 3 days.
 
-- Loss: L1 on the mel, plus mean squared error on log-duration, pitch and energy.
+- Loss: L1 on the mel before and after the postnet, plus mean squared error on log-duration, pitch and energy.
 - Optimizer: Adam (betas 0.9 and 0.98) with the Noam schedule: 4,000 warmup steps, peak learning rate 1e-3.
 - Data: LJSpeech 1.1, 13,100 clips. 100 clips are held out for validation and 100 for test, chosen with a fixed seed.
 - The vocoder is trained separately (see Vocoder training).
