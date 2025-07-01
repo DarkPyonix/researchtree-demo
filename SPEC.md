@@ -50,7 +50,7 @@ The parts run in this order: encoder, duration predictor, pitch and energy, leng
 
 ### Decoder
 
-> Three Conformer blocks (hidden size 256, 2 attention heads, depthwise convolution kernel 31), then a linear layer to 80 mel bins.
+> Six Conformer blocks (hidden size 256, 2 attention heads, depthwise convolution kernel 31), then a linear layer to 80 mel bins.
 
 - Each block: half-step feed-forward, self-attention, convolution module, half-step feed-forward, layer norm.
 - Convolution module: pointwise convolution with GLU, depthwise convolution, batch norm, SiLU, pointwise convolution.
