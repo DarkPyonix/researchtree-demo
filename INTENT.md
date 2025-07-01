@@ -17,7 +17,7 @@ Neural text-to-speech voices that sound natural are usually slow on a CPU, and t
 
 Each claim is one sentence that an experiment can support or refute. An experiment lists the claims it tests in its PR's YAML block, for example `claims: [N1]`.
 
-- **N1:** Durations from an external forced aligner (Montreal Forced Aligner) are good enough that the model does not need to learn alignment itself.
+- **N1** (revised): The model learns its own phoneme-to-frame alignment during training, and the durations it gets from it give a lower CER than durations from an external forced aligner. The original claim, that Montreal Forced Aligner durations are good enough, was refuted by experiment/learned-alignment (#9): CER 3.1% with the learned alignment, 4.5% with MFA.
 - **N2:** Explicit pitch and energy predictors let a user shift sentence pitch by ±20% while UTMOS drops by less than 0.1.
 - **N3:** A smaller HiFi-GAN (the V2 size, 0.9M parameters) keeps UTMOS within 0.1 of the V1 size (13.9M parameters) while running at least 3 times faster on a CPU.
 - **N4:** For the same model size, phoneme input gives a lower CER than character input.

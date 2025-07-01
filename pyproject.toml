@@ -10,7 +10,7 @@ dependencies = [
     "pyyaml",
     "soundfile",
     "pyworld",
-    "textgrid",
+    "scipy",
     "wandb",
     "researchtree",
 ]

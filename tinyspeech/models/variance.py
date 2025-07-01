@@ -1,4 +1,4 @@
-"""Variance adaptor: duration, pitch and energy prediction, and the length regulator."""
+"""Variance adaptor: learned alignment, duration, pitch and energy prediction, and the length regulator."""
 
 from __future__ import annotations
 
@@ -7,6 +7,8 @@ from dataclasses import dataclass
 
 import torch
 from torch import nn
+
+from .aligner import Aligner
 
 
 class VariancePredictor(nn.Module):
@@ -38,6 +40,15 @@ class LengthRegulator(nn.Module):
         return out, mel_mask
 
 
+def average_by_duration(values: torch.Tensor, durations: torch.Tensor) -> torch.Tensor:
+    """(batch, frames) values -> (batch, phonemes) means over each phoneme's frames."""
+    ends = durations.cumsum(1)
+    starts = ends - durations
+    cums = torch.nn.functional.pad(values.cumsum(1), (1, 0))
+    total = cums.gather(1, ends) - cums.gather(1, starts)
+    return total / durations.clamp(min=1)
+
+
 @dataclass
 class VarianceOutput:
     hidden: torch.Tensor
@@ -45,6 +56,8 @@ class VarianceOutput:
     log_duration: torch.Tensor
     pitch: torch.Tensor
     energy: torch.Tensor
+    durations: torch.Tensor | None = None
+    alignment: tuple | None = None  # (log soft alignment, hard alignment) during training
 
 
 class VarianceAdaptor(nn.Module):
@@ -53,6 +66,7 @@ class VarianceAdaptor(nn.Module):
     def __init__(self, cfg: dict, hidden: int):
         super().__init__()
         self.duration = VariancePredictor(hidden, **cfg["predictor"])
+        self.aligner = Aligner(n_mels=80, hidden=hidden)
         self.pitch = VariancePredictor(hidden, **cfg["predictor"])
         self.energy = VariancePredictor(hidden, **cfg["predictor"])
         # Pitch and energy are normalized to zero mean and unit variance over the corpus.
@@ -71,8 +85,18 @@ class VarianceAdaptor(nn.Module):
         """
         return torch.clamp(p + math.log(scale) / self.log_f0_std, self.pitch_min, self.pitch_max)
 
-    def forward(self, x, mask, durations=None, pitch=None, energy=None, pitch_scale: float = 1.0) -> VarianceOutput:
+    def forward(self, x, mask, durations=None, pitch=None, energy=None, pitch_scale: float = 1.0,
+                mel=None, mel_mask=None, prior=None) -> VarianceOutput:
         log_duration = self.duration(x, mask)
+        alignment = None
+        if mel is not None:
+            # Training: durations come from the hard alignment between phonemes and mel frames, and
+            # the per-frame pitch and energy targets are averaged over each phoneme with them.
+            logp, hard = self.aligner(x.detach(), mel, mask, mel_mask, prior)
+            durations = hard.sum(1).long()
+            alignment = (logp, hard)
+            pitch = average_by_duration(pitch, durations)
+            energy = average_by_duration(energy, durations)
         if durations is None:
             durations = torch.clamp(torch.round(torch.exp(log_duration) - 1), min=1).long()
             durations = durations.masked_fill(mask, 0)
@@ -87,4 +111,4 @@ class VarianceAdaptor(nn.Module):
         x = x + self.pitch_embed(torch.bucketize(p, self.pitch_bins))
         x = x + self.energy_embed(torch.bucketize(e, self.energy_bins))
         x, mel_mask = self.regulate(x, durations)
-        return VarianceOutput(x, mel_mask, log_duration, pitch_pred, energy_pred)
+        return VarianceOutput(x, mel_mask, log_duration, pitch_pred, energy_pred, durations, alignment)

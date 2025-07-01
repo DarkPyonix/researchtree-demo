@@ -23,14 +23,20 @@ The parts run in this order: encoder, duration predictor, pitch and energy, leng
 
 > Four feed-forward Transformer blocks over phoneme embeddings: hidden size 256, 2 attention heads, convolution kernel 9.
 
-### Duration predictor
+### Durations and alignment
 <!-- id: duration-predictor -->
 
-> Predicts how many mel frames each phoneme lasts. It is trained on durations from Montreal Forced Aligner.
+> Predicts how many mel frames each phoneme lasts. The training targets come from an alignment the model learns itself, so no external aligner is used.
 
-- Two 1D convolutions (kernel 3) and a linear layer. It predicts log(frames + 1) and is trained with mean squared error.
-- Training targets come from Montreal Forced Aligner 2.0 with the `english_us_arpa` acoustic model, converted to frame counts at hop size 256. Clips that the aligner fails on are left out of training.
-- At inference the prediction is rounded to whole frames, at least 1 frame per phoneme.
+- Duration predictor: two 1D convolutions (kernel 3) and a linear layer. It predicts log(frames + 1) and is trained with mean squared error.
+- Aligner: the encoder output and the mel frames are each encoded with 1D convolutions. The soft alignment is a softmax over their negative squared distances. During the first 8,000 steps it is multiplied by a beta-binomial prior that favors the diagonal.
+- Monotonic alignment search turns the soft alignment into a hard one. A phoneme's duration target is the number of frames the hard alignment gives it.
+- Aligner losses: forward-sum (a CTC loss over the soft alignment) and a binarization loss that pulls the soft alignment toward the hard one.
+- Pitch and energy targets are averaged per phoneme with these durations, during training.
+- Every clip in the training split is used.
+- At inference the predicted duration is rounded to whole frames, at least 1 frame per phoneme.
+- Code: `tinyspeech/models/aligner.py`.
+- Evidence: experiment/learned-alignment (#9), compared with experiment/mfa-g2p-lexicon (#10).
 
 ### Length regulator
 
@@ -50,7 +56,12 @@ The parts run in this order: encoder, duration predictor, pitch and energy, leng
 
 ### Decoder
 
-> Six feed-forward Transformer blocks of the same size as the encoder, then a linear layer to 80 mel bins.
+> Four Conformer blocks (hidden size 256, 2 attention heads, depthwise convolution kernel 31), then a linear layer to 80 mel bins.
+
+- Each block: half-step feed-forward, self-attention, convolution module, half-step feed-forward, layer norm.
+- Convolution module: pointwise convolution with GLU, depthwise convolution, batch norm, SiLU, pointwise convolution.
+- Code: `tinyspeech/models/conformer.py`.
+- Evidence: experiment/conformer-decoder (#11), experiment/conformer-4-layers (#15).
 
 ### Postnet
 
@@ -72,7 +83,7 @@ The parts run in this order: encoder, duration predictor, pitch and energy, leng
 
 > The acoustic model trains for 200k steps at batch size 32 on one 24 GB GPU, which takes about 3 days.
 
-- Loss: L1 on the mel before and after the postnet, plus mean squared error on log-duration, pitch and energy.
+- Loss: L1 on the mel before and after the postnet, mean squared error on log-duration, pitch and energy, and the two aligner losses (see Durations and alignment).
 - Optimizer: Adam (betas 0.9 and 0.98) with the Noam schedule: 4,000 warmup steps, peak learning rate 1e-3.
 - Data: LJSpeech 1.1, 13,100 clips. 100 clips are held out for validation and 100 for test, chosen with a fixed seed.
 - The vocoder is trained separately (see Vocoder training).
