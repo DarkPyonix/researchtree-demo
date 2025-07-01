@@ -2,8 +2,7 @@
 
 Durations come from Montreal Forced Aligner TextGrids (data/alignments/<clip>.TextGrid), made with:
 
-    python scripts/prepare_mfa_lexicon.py > data/lexicon.dict
-    mfa align data/LJSpeech-1.1/wavs data/lexicon.dict english_us_arpa data/alignments
+    mfa align data/LJSpeech-1.1/wavs data/cmudict-0.7b english_us_arpa data/alignments
 
 Clips that MFA could not align are skipped and left out of training.
 """
