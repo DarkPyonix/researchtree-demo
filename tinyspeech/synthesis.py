@@ -6,7 +6,7 @@ import numpy as np
 import torch
 import yaml
 
-from .models import Generator
+from .models import build_generator
 from .text import phonemize
 from .text.cmudict import CMUDict
 
@@ -16,7 +16,7 @@ class Synthesizer:
         torch.set_num_threads(threads)
         self.model = model.eval()
         cfg = yaml.safe_load(open(vocoder_config))
-        self.vocoder = Generator(n_mels=80, **cfg["generator"])
+        self.vocoder = build_generator(cfg["generator"])
         self.vocoder.load_state_dict(torch.load(vocoder, map_location="cpu"))
         self.vocoder.eval()
         self.lexicon = CMUDict("data/cmudict-0.7b")
