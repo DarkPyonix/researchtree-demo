@@ -1,12 +1,14 @@
-# Vocoder: HiFi-GAN V1 (13.9M generator parameters).
+# Vocoder: iSTFTNet C8C8I (two upsampling stages, then a 16-point inverse STFT; 8.2M generator parameters).
 
 generator:
-  type: hifigan
-  upsample_rates: [8, 8, 2, 2]
-  upsample_kernel_sizes: [16, 16, 4, 4]
+  type: istftnet
+  upsample_rates: [8, 8]
+  upsample_kernel_sizes: [16, 16]
   upsample_initial_channel: 512
   resblock_kernel_sizes: [3, 7, 11]
   resblock_dilation_sizes: [[1, 3, 5], [1, 3, 5], [1, 3, 5]]
+  istft_n_fft: 16
+  istft_hop: 4
 
 discriminators: [mpd, msd]
 
