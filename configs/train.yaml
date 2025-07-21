@@ -3,6 +3,7 @@
 batch_size: 32
 max_steps: 200000
 grad_clip: 1.0
+ema_decay: 0.999        # evaluate and save an exponential moving average of the weights
 seed: 1234
 eval_every: 10000
 
