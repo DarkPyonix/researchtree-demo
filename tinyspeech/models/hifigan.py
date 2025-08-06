@@ -106,6 +106,33 @@ class ScaleDiscriminator(nn.Module):
         return x.flatten(1), features
 
 
+class ResolutionDiscriminator(nn.Module):
+    """2D convolutions over the magnitude spectrogram at one STFT resolution (UnivNet)."""
+
+    def __init__(self, n_fft: int, hop: int, win: int):
+        super().__init__()
+        self.n_fft, self.hop, self.win = n_fft, hop, win
+        self.convs = nn.ModuleList([
+            weight_norm(nn.Conv2d(1, 32, (3, 9), padding=(1, 4))),
+            weight_norm(nn.Conv2d(32, 32, (3, 9), stride=(1, 2), padding=(1, 4))),
+            weight_norm(nn.Conv2d(32, 32, (3, 9), stride=(1, 2), padding=(1, 4))),
+            weight_norm(nn.Conv2d(32, 32, (3, 9), stride=(1, 2), padding=(1, 4))),
+            weight_norm(nn.Conv2d(32, 32, (3, 3), padding=(1, 1))),
+        ])
+        self.out = weight_norm(nn.Conv2d(32, 1, (3, 3), padding=(1, 1)))
+
+    def forward(self, wav: torch.Tensor):
+        window = torch.hann_window(self.win, device=wav.device)
+        spec = torch.stft(wav.squeeze(1), self.n_fft, self.hop, self.win, window, return_complex=True).abs()
+        x, features = spec.unsqueeze(1), []
+        for conv in self.convs:
+            x = F.leaky_relu(conv(x), LRELU_SLOPE)
+            features.append(x)
+        x = self.out(x)
+        features.append(x)
+        return x.flatten(1), features
+
+
 def build_discriminators(names: list[str]) -> nn.ModuleList:
     out = nn.ModuleList()
     for name in names:
@@ -113,6 +140,8 @@ def build_discriminators(names: list[str]) -> nn.ModuleList:
             out.extend(PeriodDiscriminator(p) for p in (2, 3, 5, 7, 11))
         elif name == "msd":
             out.extend(ScaleDiscriminator() for _ in range(3))
+        elif name == "mrd":
+            out.extend(ResolutionDiscriminator(*r) for r in ((1024, 120, 600), (2048, 240, 1200), (512, 50, 240)))
         else:
             raise ValueError(f"unknown discriminator: {name}")
     return out
