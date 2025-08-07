@@ -10,7 +10,7 @@ generator:
   istft_n_fft: 16
   istft_hop: 4
 
-discriminators: [mpd, msd]
+discriminators: [mpd, mrd]
 
 loss:
   mel_weight: 45
