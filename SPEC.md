@@ -85,6 +85,7 @@ The parts run in this order: encoder, duration predictor, pitch and energy, leng
 
 - Loss: L1 on the mel before and after the postnet, mean squared error on log-duration, pitch and energy, and the two aligner losses (see Durations and alignment).
 - Optimizer: Adam (betas 0.9 and 0.98) with the Noam schedule: 4,000 warmup steps, peak learning rate 1e-3.
+- Evaluation and saved checkpoints use an exponential moving average of the weights (decay 0.999).
 - Data: LJSpeech 1.1, 13,100 clips. 100 clips are held out for validation and 100 for test, chosen with a fixed seed.
 - The vocoder is trained separately (see Vocoder training).
 
