@@ -10,7 +10,10 @@ Config: `configs/vocoder.yaml`. Code: `tinyspeech/models/hifigan.py`, `train_voc
 
 ### Discriminators
 
-> A multi-period discriminator (periods 2, 3, 5, 7 and 11) and a multi-scale discriminator (3 scales).
+> A multi-period discriminator (periods 2, 3, 5, 7 and 11) and a multi-resolution spectrogram discriminator (STFT sizes 512, 1024 and 2048).
+
+- The resolution discriminator runs 2D convolutions over the magnitude spectrogram at each STFT size (hops 50, 120 and 240).
+- Evidence: experiment/istft-mrd (#23).
 
 ### Vocoder training
 
