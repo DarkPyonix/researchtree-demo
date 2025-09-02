@@ -19,7 +19,7 @@ Each claim is one sentence that an experiment can support or refute. An experime
 
 - **N1** (revised): The model learns its own phoneme-to-frame alignment during training, and the durations it gets from it give a lower CER than durations from an external forced aligner. The original claim, that Montreal Forced Aligner durations are good enough, was refuted by experiment/learned-alignment (#9): CER 3.1% with the learned alignment, 4.5% with MFA.
 - **N2:** Explicit pitch and energy predictors let a user shift sentence pitch by ±20% while UTMOS drops by less than 0.1.
-- **N3:** A smaller HiFi-GAN (the V2 size, 0.9M parameters) keeps UTMOS within 0.1 of the V1 size (13.9M parameters) while running at least 3 times faster on a CPU.
+- **N3** (revised): A vocoder that ends in an inverse STFT (iSTFTNet) keeps UTMOS within 0.1 of HiFi-GAN V1 while running at least 3 times faster on a CPU. Shrinking HiFi-GAN itself does not work: the original claim, about the V2 size, was refuted by experiment/hifigan-v2 (#18), which lost 0.25 UTMOS.
 - **N4:** For the same model size, phoneme input gives a lower CER than character input.
 
 ## Constraints
@@ -37,4 +37,4 @@ Each claim is one sentence that an experiment can support or refute. An experime
 
 ## Open decisions
 
-- **D2:** Which vocoder ships: HiFi-GAN V1, a smaller HiFi-GAN, or a different design? The answer decides whether we can meet the speed goal (N3).
+- **D3:** Is sentence context from a pretrained text model (for example BERT) worth its CPU cost? It could improve phrasing, but it spends part of the speed budget that the new vocoder freed.

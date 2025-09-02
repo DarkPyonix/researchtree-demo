@@ -1,12 +1,15 @@
 ## Vocoder
 
-> HiFi-GAN V1 turns the 80-bin mel spectrogram into a 22.05 kHz waveform. It is trained separately from the acoustic model.
+> An iSTFTNet generator turns the 80-bin mel spectrogram into a 22.05 kHz waveform: two upsampling stages, then an inverse STFT. It is trained separately from the acoustic model.
 
-Config: `configs/vocoder.yaml`. Code: `tinyspeech/models/hifigan.py`, `train_vocoder.py`.
+Config: `configs/vocoder.yaml`. Code: `tinyspeech/models/istftnet.py` (generator), `tinyspeech/models/hifigan.py` (residual blocks and discriminators), `train_vocoder.py`.
 
 ### Generator
 
-> Transposed convolutions upsample by 8, 8, 2 and 2 (256 times in total), each followed by residual blocks with kernels 3, 7 and 11. 512 initial channels, 13.9M parameters.
+> Transposed convolutions upsample by 8 and 8, each followed by HiFi-GAN residual blocks (kernels 3, 7 and 11). The last layer predicts the magnitude and phase of a 16-point STFT with hop 4, and an inverse STFT gives the waveform. 512 initial channels, 8.2M parameters.
+
+- Magnitude is the exponential of the network output; phase is pi times its sine, so it stays in [-pi, pi].
+- Evidence: experiment/istftnet (#19), compared with experiment/hifigan-v2 (#18).
 
 ### Discriminators
 
