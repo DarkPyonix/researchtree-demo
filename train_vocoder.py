@@ -16,7 +16,7 @@ import yaml
 
 import researchtree as rt
 from tinyspeech.audio import mel_spectrogram
-from tinyspeech.models import Generator, build_discriminators
+from tinyspeech.models import build_discriminators, build_generator
 from tinyspeech.vocoder_data import VocoderSegments
 
 
@@ -41,7 +41,7 @@ def main() -> None:
     run = wandb.init(project="tts", name=f"vocoder-{args.stage}", config=cfg)
     rt.set(wandb=run.url)
 
-    gen = Generator(n_mels=80, **cfg["generator"]).cuda()
+    gen = build_generator(cfg["generator"]).cuda()
     discs = build_discriminators(cfg["discriminators"]).cuda()
     opt_g = torch.optim.AdamW(gen.parameters(), tcfg["lr"], betas=tuple(tcfg["betas"]))
     opt_d = torch.optim.AdamW(discs.parameters(), tcfg["lr"], betas=tuple(tcfg["betas"]))
