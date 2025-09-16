@@ -14,7 +14,7 @@ discriminators: [mpd, mrd]
 
 loss:
   mel_weight: 45
-  feature_matching_weight: 4
+  feature_matching_weight: 2
 
 training:
   batch_size: 16
