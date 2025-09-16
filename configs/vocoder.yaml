@@ -21,4 +21,4 @@ training:
   betas: [0.8, 0.99]
   lr_decay: 0.999
   max_steps: 500000                  # on ground-truth mels
-  finetune_on_predicted_mels: 200000 # then on mels from the acoustic model
+  finetune_on_predicted_mels: 50000  # then on mels from the acoustic model
