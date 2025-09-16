@@ -58,7 +58,6 @@ def main() -> None:
     opt = torch.optim.Adam(model.parameters(), lr=tcfg["optimizer"]["lr"], betas=tuple(tcfg["optimizer"]["betas"]))
     warmup, hidden = tcfg["scheduler"]["warmup_steps"], cfg["encoder"]["hidden"]
     sched = torch.optim.lr_scheduler.LambdaLR(opt, lambda s: noam(s, warmup, hidden) / noam(warmup, warmup, hidden))
-    ema = torch.optim.swa_utils.AveragedModel(model, multi_avg_fn=torch.optim.swa_utils.get_ema_multi_avg_fn(tcfg["ema_decay"]))
 
     step = 0
     while step < tcfg["max_steps"]:
@@ -74,17 +73,16 @@ def main() -> None:
             torch.nn.utils.clip_grad_norm_(model.parameters(), tcfg["grad_clip"])
             opt.step()
             sched.step()
-            ema.update_parameters(model)
             step += 1
             if step % 100 == 0:
                 wandb.log({f"train/{k}": x.item() for k, x in losses.items()}, step=step)
             if step % tcfg["eval_every"] == 0:
-                wandb.log({f"val/{k}": x for k, x in evaluate(ema.module, val_ids, test_ids=None).items()}, step=step)
-                torch.save(ema.module.state_dict(), f"checkpoints/{args.run_name}.pt")
+                wandb.log({f"val/{k}": x for k, x in evaluate(model, val_ids, test_ids=None).items()}, step=step)
+                torch.save(model.state_dict(), f"checkpoints/{args.run_name}.pt")
             if step >= tcfg["max_steps"]:
                 break
 
-    final = evaluate(ema.module, val_ids, test_ids=test_ids)
+    final = evaluate(model, val_ids, test_ids=test_ids)
     wandb.log({f"test/{k}": x for k, x in final.items()}, step=step)
     rt.log(**final)  # final metrics into the PR's YAML block
 
