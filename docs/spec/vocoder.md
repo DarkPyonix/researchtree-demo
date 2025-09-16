@@ -1,12 +1,12 @@
 ## Vocoder
 
-> HiFi-GAN V2 turns the 80-bin mel spectrogram into a 22.05 kHz waveform. It is trained separately from the acoustic model.
+> HiFi-GAN V1 turns the 80-bin mel spectrogram into a 22.05 kHz waveform. It is trained separately from the acoustic model.
 
 Config: `configs/vocoder.yaml`. Code: `tinyspeech/models/hifigan.py`, `train_vocoder.py`.
 
 ### Generator
 
-> Transposed convolutions upsample by 8, 8, 2 and 2 (256 times in total), each followed by residual blocks with kernels 3, 7 and 11. 128 initial channels (the HiFi-GAN V2 size), 0.9M parameters.
+> Transposed convolutions upsample by 8, 8, 2 and 2 (256 times in total), each followed by residual blocks with kernels 3, 7 and 11. 512 initial channels, 13.9M parameters.
 
 ### Discriminators
 
