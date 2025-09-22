@@ -11,6 +11,7 @@ dependencies = [
     "soundfile",
     "pyworld",
     "scipy",
+    "transformers",
     "wandb",
     "researchtree",
 ]
