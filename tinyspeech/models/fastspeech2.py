@@ -7,6 +7,7 @@ import math
 import torch
 from torch import nn
 
+from .context import PhraseContext
 from .variance import VarianceAdaptor
 
 
@@ -95,15 +96,21 @@ class FastSpeech2(nn.Module):
         n_mels = cfg["audio"]["n_mels"]
         self.embed = nn.Embedding(n_symbols, hidden, padding_idx=0)
         self.encoder = FFTStack(**cfg["encoder"])
+        self.context = PhraseContext(hidden, cfg["context"]["model"]) if cfg.get("context") else None
         self.variance = VarianceAdaptor(cfg["variance"], hidden)
         self.decoder = build_decoder(cfg["decoder"])
         self.to_mel = nn.Linear(cfg["decoder"]["hidden"], n_mels)
         self.postnet = Postnet(n_mels, **cfg["postnet"])
 
     def forward(self, ids, id_mask, durations=None, pitch=None, energy=None, pitch_scale: float = 1.0,
-                mel=None, mel_mask=None, prior=None):
-        """With `mel` (training), durations come from the learned alignment; without it, from the predictor."""
+                mel=None, mel_mask=None, prior=None, words=None, word_ids=None):
+        """With `mel` (training), durations come from the learned alignment; without it, from the predictor.
+
+        `words` (a list of words per item) and `word_ids` (each phoneme's word index) feed the phrase context.
+        """
         x = self.encoder(self.embed(ids), id_mask)
+        if self.context is not None:
+            x = x + self.context(words, word_ids).masked_fill(id_mask.unsqueeze(-1), 0.0)
         v = self.variance(x, id_mask, durations, pitch, energy, pitch_scale=pitch_scale,
                           mel=mel, mel_mask=mel_mask, prior=prior)
         mel = self.to_mel(self.decoder(v.hidden, v.mel_mask))
@@ -111,11 +118,11 @@ class FastSpeech2(nn.Module):
         return mel, mel_post, v
 
     @torch.no_grad()
-    def synthesize(self, ids: torch.Tensor, pitch_scale: float = 1.0) -> torch.Tensor:
+    def synthesize(self, ids: torch.Tensor, pitch_scale: float = 1.0, words=None, word_ids=None) -> torch.Tensor:
         """One sentence (batch of 1) to a mel spectrogram, using predicted durations, pitch and energy.
 
         pitch_scale multiplies the predicted F0: 1.2 is 20% higher, 0.8 is 20% lower.
         """
         mask = torch.zeros_like(ids, dtype=torch.bool)
-        _, mel, _ = self(ids, mask, pitch_scale=pitch_scale)
+        _, mel, _ = self(ids, mask, pitch_scale=pitch_scale, words=words, word_ids=word_ids)
         return mel

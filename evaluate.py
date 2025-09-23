@@ -25,9 +25,9 @@ def validation_mel_l1(model, val_ids: list[str]) -> float:
     ds = LJSpeech("data/LJSpeech-1.1", "data/features", val_ids, CMUDict("data/cmudict-0.7b"))
     total, frames = 0.0, 0
     for item in ds:
-        batch = {k: v.cuda() for k, v in collate([item]).items()}
+        batch = {k: v.cuda() if torch.is_tensor(v) else v for k, v in collate([item]).items()}
         _, mel_post, _ = model(batch["ids"], batch["id_mask"], pitch=batch["pitch"], energy=batch["energy"],
-                               mel=batch["mel"], mel_mask=batch["mel_mask"])
+                               mel=batch["mel"], mel_mask=batch["mel_mask"], words=batch["words"], word_ids=batch["word_ids"])
         total += (mel_post - batch["mel"]).abs().sum().item() / batch["mel"].shape[-1]
         frames += batch["mel"].shape[1]
     return total / frames

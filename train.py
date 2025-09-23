@@ -62,10 +62,11 @@ def main() -> None:
     step = 0
     while step < tcfg["max_steps"]:
         for batch in loader:
-            batch = {k: v.cuda() for k, v in batch.items()}
+            batch = {k: v.cuda() if torch.is_tensor(v) else v for k, v in batch.items()}
             prior = batch["prior"] if step < tcfg["aligner"]["prior_steps"] else None
             mel, mel_post, v = model(batch["ids"], batch["id_mask"], pitch=batch["pitch"], energy=batch["energy"],
-                                     mel=batch["mel"], mel_mask=batch["mel_mask"], prior=prior)
+                                     mel=batch["mel"], mel_mask=batch["mel_mask"], prior=prior,
+                                     words=batch["words"], word_ids=batch["word_ids"])
             bin_weight = 1.0 if step >= tcfg["aligner"]["bin_loss_start"] else 0.0
             losses = acoustic_loss(batch, mel, mel_post, v, bin_weight=bin_weight)
             opt.zero_grad()

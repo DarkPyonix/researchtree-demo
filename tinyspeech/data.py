@@ -38,7 +38,8 @@ class LJSpeech(Dataset):
     def __getitem__(self, index: int) -> dict:
         clip, _, text = self.items[index]
         f = np.load(self.features / f"{clip}.npz")
-        ids = phonemize(text, self.lexicon).ids
+        ph = phonemize(text, self.lexicon)
+        ids = ph.ids
         mel = torch.from_numpy(f["mel"])  # (frames, n_mels)
         return {
             "ids": torch.tensor(ids),
@@ -46,6 +47,8 @@ class LJSpeech(Dataset):
             "pitch": torch.from_numpy(f["pitch"]),    # normalized log-F0 per frame
             "energy": torch.from_numpy(f["energy"]),  # normalized energy per frame
             "prior": beta_binomial_prior(len(ids), len(mel)),
+            "word_ids": torch.tensor(ph.word_ids),
+            "words": ph.words,
         }
 
 
@@ -58,7 +61,8 @@ def pad_2d(xs: list[torch.Tensor]) -> torch.Tensor:
 
 def collate(batch: list[dict]) -> dict:
     pad = torch.nn.utils.rnn.pad_sequence
-    out = {k: pad([b[k] for b in batch], batch_first=True) for k in batch[0] if k != "prior"}
+    out = {k: pad([b[k] for b in batch], batch_first=True) for k in batch[0] if k not in ("prior", "words")}
+    out["words"] = [b["words"] for b in batch]
     out["prior"] = pad_2d([b["prior"] for b in batch])
     id_len = torch.tensor([len(b["ids"]) for b in batch])
     mel_len = torch.tensor([len(b["mel"]) for b in batch])
