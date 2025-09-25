@@ -9,6 +9,7 @@ encoder:
 
 variance:
   durations: learned      # targets from the model's own alignment (tinyspeech/models/aligner.py)
+  upsampling: gaussian    # soft length regulator
   pitch:
     level: phoneme        # one value per phoneme
     bins: 256
