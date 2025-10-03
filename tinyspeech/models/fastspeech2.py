@@ -101,21 +101,21 @@ class FastSpeech2(nn.Module):
         self.postnet = Postnet(n_mels, **cfg["postnet"])
 
     def forward(self, ids, id_mask, durations=None, pitch=None, energy=None, pitch_scale: float = 1.0,
-                mel=None, mel_mask=None, prior=None):
+                mel=None, mel_mask=None, prior=None, emphasis=None):
         """With `mel` (training), durations come from the learned alignment; without it, from the predictor."""
         x = self.encoder(self.embed(ids), id_mask)
         v = self.variance(x, id_mask, durations, pitch, energy, pitch_scale=pitch_scale,
-                          mel=mel, mel_mask=mel_mask, prior=prior)
+                          mel=mel, mel_mask=mel_mask, prior=prior, emphasis=emphasis)
         mel = self.to_mel(self.decoder(v.hidden, v.mel_mask))
         mel_post = mel + self.postnet(mel)
         return mel, mel_post, v
 
     @torch.no_grad()
-    def synthesize(self, ids: torch.Tensor, pitch_scale: float = 1.0) -> torch.Tensor:
+    def synthesize(self, ids: torch.Tensor, pitch_scale: float = 1.0, emphasis=None) -> torch.Tensor:
         """One sentence (batch of 1) to a mel spectrogram, using predicted durations, pitch and energy.
 
         pitch_scale multiplies the predicted F0: 1.2 is 20% higher, 0.8 is 20% lower.
         """
         mask = torch.zeros_like(ids, dtype=torch.bool)
-        _, mel, _ = self(ids, mask, pitch_scale=pitch_scale)
+        _, mel, _ = self(ids, mask, pitch_scale=pitch_scale, emphasis=emphasis)
         return mel
