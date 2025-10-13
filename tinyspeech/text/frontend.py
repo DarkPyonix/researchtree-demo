@@ -5,6 +5,7 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 
+from .abbreviations import expand_abbreviations
 from .cmudict import CMUDict
 from .numbers import expand_numbers
 from .symbols import PUNCTUATION, SPACE, SYMBOL_TO_ID
@@ -15,12 +16,12 @@ _DIGITS = ["zero", "one", "two", "three", "four", "five", "six", "seven", "eight
 
 
 def normalize(text: str) -> str:
-    """Lowercase, straighten quotes, spell out numbers and collapse whitespace.
+    """Lowercase, straighten quotes, expand abbreviations, spell out numbers and collapse whitespace.
 
     A digit that is left over after number expansion is read on its own.
     """
     text = text.lower().replace("’", "'").replace("“", '"').replace("”", '"')
-    text = expand_numbers(text)
+    text = expand_numbers(expand_abbreviations(text))
     return _WHITESPACE.sub(" ", text).strip()
 
 
