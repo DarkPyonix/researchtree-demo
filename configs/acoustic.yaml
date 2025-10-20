@@ -46,4 +46,4 @@ audio:
   fmax: 8000
 
 context:
-  model: bert-base-uncased   # frozen; one vector per word, added to that word's phonemes
+  model: bert-large-uncased  # frozen; one vector per word, added to that word's phonemes
