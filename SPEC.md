@@ -77,6 +77,7 @@ The parts run in this order: encoder, duration predictor, pitch and energy, leng
 - The shifted value is clamped to the 2nd to 98th percentile of the speaker's normalized phoneme pitch ([-2.1, 2.6]), so no phoneme leaves the speaker's range.
 - The measured pitch is never scaled, so training is unaffected.
 - Command line: `python synthesize.py "text" --pitch-scale 1.1`.
+- Word emphasis: words written between asterisks (`a *red* car`) get 15% higher pitch and 20% longer durations.
 - Evidence: experiment/pitch-control-range (#6), experiment/pitch-scale-clamp (#8).
 
 ## Training
