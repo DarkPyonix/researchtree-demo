@@ -25,10 +25,10 @@ The parts run in this order: encoder, phrase context, duration predictor, pitch 
 
 ### Phrase context
 
-> Each phoneme also gets the vector of its word from a frozen BERT-base model that reads the whole sentence, so the model can tell which words the phrase stresses.
+> Each phoneme also gets the vector of its word from a frozen BERT-large model that reads the whole sentence, so the model can tell which words the phrase stresses.
 
-- BERT-base (uncased, 110M parameters, frozen) reads the sentence's words. A word's vector is the mean of its sub-word vectors from the last layer.
-- A linear layer projects each 768-dimensional word vector to 256, and the result is added to the encoder output of every phoneme of that word. Word gaps and punctuation get nothing.
+- BERT-large (uncased, 340M parameters, frozen) reads the sentence's words. A word's vector is the mean of its sub-word vectors from the last layer.
+- A linear layer projects each 1,024-dimensional word vector to 256, and the result is added to the encoder output of every phoneme of that word. Word gaps and punctuation get nothing.
 - Code: `tinyspeech/models/context.py`. Config: `context.model` in `configs/acoustic.yaml`.
 - Evidence: experiment/prosody-bert (#26).
 
