@@ -70,4 +70,11 @@ def expand_numbers(text: str) -> str:
     text = _ORDINAL.sub(lambda m: ordinal(int(m[1])), text)
     text = _YEAR.sub(lambda m: year(int(m[1])), text)
     text = _DECIMAL.sub(lambda m: f"{cardinal(int(m[1]))} point {' '.join(_ONES[int(d)] for d in m[2])}", text)
-    return _NUMBER.sub(lambda m: cardinal(int(m[0].replace(",", ""))), text)
+    return _NUMBER.sub(_whole, text)
+
+
+def _whole(m: re.Match) -> str:
+    digits = m[0].replace(",", "")
+    if len(digits) > 1 and digits.startswith("0"):
+        return " ".join(_ONES[int(d)] for d in digits)  # "007" is read "zero zero seven"
+    return cardinal(int(digits))

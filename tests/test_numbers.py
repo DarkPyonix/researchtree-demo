@@ -17,6 +17,7 @@ from tinyspeech.text.numbers import expand_numbers
         ("the 40th time", "the fortieth time"),
         ("1,254 people", "one thousand two hundred fifty-four people"),
         ("2.5 miles", "two point five miles"),
+        ("room 007", "room zero zero seven"),
     ],
 )
 def test_expand_numbers(text, spoken):
