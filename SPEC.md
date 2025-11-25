@@ -40,9 +40,7 @@ The parts run in this order: encoder, duration predictor, pitch and energy, leng
 
 ### Length regulator
 
-> Expands phonemes to frames with Gaussian upsampling: each frame is a mix of phoneme vectors, weighted by Gaussians centered on each phoneme's predicted time span.
-
-- The width of each Gaussian, in frames, comes from a predictor with the same shape as the duration predictor.
+> Repeats each phoneme's hidden vector as many times as its duration in frames.
 
 ### Variance adaptor
 <!-- id: variance-adaptor -->

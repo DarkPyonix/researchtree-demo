@@ -32,35 +32,12 @@ class VariancePredictor(nn.Module):
 class LengthRegulator(nn.Module):
     """Repeat each phoneme's hidden vector as many times as its duration in frames."""
 
-    def forward(self, x: torch.Tensor, durations: torch.Tensor, mask: torch.Tensor | None = None) -> tuple[torch.Tensor, torch.Tensor]:
+    def forward(self, x: torch.Tensor, durations: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
         frames = [torch.repeat_interleave(xi, di, dim=0) for xi, di in zip(x, durations)]
         lengths = torch.tensor([f.shape[0] for f in frames], device=x.device)
         out = nn.utils.rnn.pad_sequence(frames, batch_first=True)
         mel_mask = torch.arange(out.shape[1], device=x.device)[None, :] >= lengths[:, None]
         return out, mel_mask
-
-
-class GaussianUpsampling(nn.Module):
-    """Soft length regulator (Non-Attentive Tacotron): each frame is a Gaussian-weighted mix of phonemes.
-
-    Phoneme i is centered on the middle of its predicted duration; its width, in frames, comes from a
-    small predictor, so short phonemes blend into their neighbors and long ones stay flat.
-    """
-
-    def __init__(self, hidden: int):
-        super().__init__()
-        self.width = VariancePredictor(hidden)
-
-    def forward(self, x: torch.Tensor, durations: torch.Tensor, mask: torch.Tensor | None = None):
-        ends = durations.cumsum(1).float()
-        centers = ends - durations.float() / 2
-        sigma = nn.functional.softplus(self.width(x, mask)) + 0.5
-        lengths = durations.sum(1)
-        t = torch.arange(int(lengths.max()), device=x.device).float()[None, :, None] + 0.5
-        logits = -((t - centers[:, None, :]) ** 2) / (2 * sigma[:, None, :] ** 2)
-        weights = torch.softmax(logits.masked_fill(mask[:, None, :], -1e9), dim=-1)  # (batch, frames, phonemes)
-        mel_mask = torch.arange(t.shape[1], device=x.device)[None, :] >= lengths[:, None]
-        return weights @ x, mel_mask
 
 
 def average_by_duration(values: torch.Tensor, durations: torch.Tensor) -> torch.Tensor:
@@ -97,7 +74,7 @@ class VarianceAdaptor(nn.Module):
         self.register_buffer("energy_bins", torch.linspace(-3.0, 3.0, cfg["energy"]["bins"] - 1))
         self.pitch_embed = nn.Embedding(cfg["pitch"]["bins"], hidden)
         self.energy_embed = nn.Embedding(cfg["energy"]["bins"], hidden)
-        self.regulate = GaussianUpsampling(hidden) if cfg.get("upsampling") == "gaussian" else LengthRegulator()
+        self.regulate = LengthRegulator()
         self.log_f0_std = cfg["pitch"]["log_f0_std"]
         self.pitch_min, self.pitch_max = cfg["pitch"]["clamp"]
 
@@ -133,5 +110,5 @@ class VarianceAdaptor(nn.Module):
         e = energy if energy is not None else energy_pred
         x = x + self.pitch_embed(torch.bucketize(p, self.pitch_bins))
         x = x + self.energy_embed(torch.bucketize(e, self.energy_bins))
-        x, mel_mask = self.regulate(x, durations, mask)
+        x, mel_mask = self.regulate(x, durations)
         return VarianceOutput(x, mel_mask, log_duration, pitch_pred, energy_pred, durations, alignment)
