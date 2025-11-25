@@ -37,4 +37,4 @@ Each claim is one sentence that an experiment can support or refute. An experime
 
 ## Open decisions
 
-- **D3:** Is sentence context from a pretrained text model (for example BERT) worth its CPU cost? It could improve phrasing, but it spends part of the speed budget that the new vocoder freed.
+- **D4:** Can a much smaller text encoder give the same phrasing gain as BERT-base? BERT-base takes 0.07 of the 0.21 RTF.

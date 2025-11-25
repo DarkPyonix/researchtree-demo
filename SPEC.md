@@ -7,7 +7,9 @@
 > Raw English text is lowercased, split into words and punctuation, and converted to ARPAbet phonemes with CMUdict.
 
 - Normalization: lowercase, curly quotes replaced with straight quotes, runs of whitespace collapsed to one space.
-- Numbers are not expanded: each digit is read on its own ("1963" is read "one nine six three").
+- Numbers are spelled out before phonemization: money ("$5.50" is read "five dollars, fifty cents"), ordinals ("3rd"), years from 1100 to 2099 ("1963" is read "nineteen sixty-three"), decimals and whole numbers with or without thousands separators. Code: `tinyspeech/text/numbers.py`.
+- Abbreviations followed by a period are expanded first: 18 titles and words such as "mr.", "dr." and "col.". "st." is always read "saint". Code: `tinyspeech/text/abbreviations.py`.
+- Evidence: experiment/number-normalizer (#25), experiment/abbrev-expansion (#29).
 - Each word is looked up in CMUdict 0.7b, keeping stress markers. A word missing from CMUdict is spelled out letter by letter.
 - The punctuation marks `, . ? ! ; :` become their own tokens so the model can place pauses.
 - Every phoneme keeps the index of the word it came from (`word_ids`).
@@ -17,11 +19,20 @@
 
 > A non-autoregressive FastSpeech2-style model maps phoneme ids to an 80-bin log-mel spectrogram in one forward pass.
 
-The parts run in this order: encoder, duration predictor, pitch and energy, length regulator, decoder, postnet. Sizes are in `configs/acoustic.yaml`. Code: `tinyspeech/models/fastspeech2.py` and `tinyspeech/models/variance.py`.
+The parts run in this order: encoder, phrase context, duration predictor, pitch and energy, length regulator, decoder, postnet. Sizes are in `configs/acoustic.yaml`. Code: `tinyspeech/models/fastspeech2.py` and `tinyspeech/models/variance.py`.
 
 ### Encoder
 
 > Four feed-forward Transformer blocks over phoneme embeddings: hidden size 256, 2 attention heads, convolution kernel 9.
+
+### Phrase context
+
+> Each phoneme also gets the vector of its word from a frozen BERT-base model that reads the whole sentence, so the model can tell which words the phrase stresses.
+
+- BERT-base (uncased, 110M parameters, frozen) reads the sentence's words. A word's vector is the mean of its sub-word vectors from the last layer.
+- A linear layer projects each 768-dimensional word vector to 256, and the result is added to the encoder output of every phoneme of that word. Word gaps and punctuation get nothing.
+- Code: `tinyspeech/models/context.py`. Config: `context.model` in `configs/acoustic.yaml`.
+- Evidence: experiment/prosody-bert (#26).
 
 ### Durations and alignment
 <!-- id: duration-predictor -->
