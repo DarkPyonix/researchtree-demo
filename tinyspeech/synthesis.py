@@ -24,9 +24,7 @@ class Synthesizer:
 
     @torch.no_grad()
     def __call__(self, text: str, pitch_scale: float = 1.0) -> np.ndarray:
-        ph = phonemize(text, self.lexicon)
-        ids = torch.tensor([ph.ids])
-        emphasis = torch.tensor([ph.emphasis]) if any(ph.emphasis) else None
-        mel = self.model.synthesize(ids, pitch_scale=pitch_scale, emphasis=emphasis)
+        ids = torch.tensor([phonemize(text, self.lexicon).ids])
+        mel = self.model.synthesize(ids, pitch_scale=pitch_scale)
         wav = self.vocoder(mel.transpose(1, 2))
         return wav.squeeze().numpy()

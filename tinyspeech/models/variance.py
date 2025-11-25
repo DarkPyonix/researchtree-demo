@@ -77,8 +77,6 @@ class VarianceAdaptor(nn.Module):
         self.regulate = LengthRegulator()
         self.log_f0_std = cfg["pitch"]["log_f0_std"]
         self.pitch_min, self.pitch_max = cfg["pitch"]["clamp"]
-        self.emphasis_pitch = cfg.get("emphasis", {}).get("pitch_scale", 1.15)
-        self.emphasis_duration = cfg.get("emphasis", {}).get("duration_scale", 1.2)
 
     def shift_pitch(self, p: torch.Tensor, scale: float) -> torch.Tensor:
         """Multiply F0 by `scale`. p is normalized log-F0, so this adds log(scale) / std.
@@ -88,7 +86,7 @@ class VarianceAdaptor(nn.Module):
         return torch.clamp(p + math.log(scale) / self.log_f0_std, self.pitch_min, self.pitch_max)
 
     def forward(self, x, mask, durations=None, pitch=None, energy=None, pitch_scale: float = 1.0,
-                mel=None, mel_mask=None, prior=None, emphasis=None) -> VarianceOutput:
+                mel=None, mel_mask=None, prior=None) -> VarianceOutput:
         log_duration = self.duration(x, mask)
         alignment = None
         if mel is not None:
@@ -102,9 +100,6 @@ class VarianceAdaptor(nn.Module):
         if durations is None:
             durations = torch.clamp(torch.round(torch.exp(log_duration) - 1), min=1).long()
             durations = durations.masked_fill(mask, 0)
-            if emphasis is not None:
-                stretched = torch.round(durations * self.emphasis_duration).long()
-                durations = torch.where(emphasis.bool(), stretched, durations)
         # Pitch and energy are predicted per phoneme, before the length regulator, so every
         # frame of a phoneme gets the same pitch and energy embedding.
         pitch_pred = self.pitch(x, mask)
@@ -112,8 +107,6 @@ class VarianceAdaptor(nn.Module):
         p = pitch if pitch is not None else pitch_pred
         if pitch is None and pitch_scale != 1.0:
             p = self.shift_pitch(p, pitch_scale)
-        if pitch is None and emphasis is not None:
-            p = torch.where(emphasis.bool(), self.shift_pitch(p, self.emphasis_pitch), p)
         e = energy if energy is not None else energy_pred
         x = x + self.pitch_embed(torch.bucketize(p, self.pitch_bins))
         x = x + self.energy_embed(torch.bucketize(e, self.energy_bins))
