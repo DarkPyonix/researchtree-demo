@@ -9,7 +9,7 @@
 - Normalization: lowercase, curly quotes replaced with straight quotes, runs of whitespace collapsed to one space.
 - Numbers are spelled out before phonemization: money ("$5.50" is read "five dollars, fifty cents"), ordinals ("3rd"), years from 1100 to 2099 ("1963" is read "nineteen sixty-three"), decimals and whole numbers with or without thousands separators. Code: `tinyspeech/text/numbers.py`.
 - Evidence: experiment/number-normalizer (#25).
-- Each word is looked up in CMUdict 0.7b, keeping stress markers. A word missing from CMUdict gets a pronunciation from the g2p_en neural model.
+- Each word is looked up in CMUdict 0.7b, keeping stress markers. A word missing from CMUdict is spelled out letter by letter.
 - The punctuation marks `, . ? ! ; :` become their own tokens so the model can place pauses.
 - Every phoneme keeps the index of the word it came from (`word_ids`).
 - Code: `tinyspeech/text/frontend.py`.

@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import functools
 import re
 from dataclasses import dataclass
 
@@ -48,23 +47,11 @@ def phonemize(text: str, lexicon: CMUDict) -> Phonemized:
         if words:
             ids.append(SYMBOL_TO_ID[SPACE])
             word_ids.append(-1)
-        phones = lexicon.lookup(token) or neural_g2p(token)
+        phones = lexicon.lookup(token) or spell_out(token, lexicon)
         ids.extend(SYMBOL_TO_ID[p] for p in phones)
         word_ids.extend([len(words)] * len(phones))
         words.append(token)
     return Phonemized(ids, word_ids, words)
-
-
-@functools.cache
-def _g2p():
-    from g2p_en import G2p
-
-    return G2p()
-
-
-def neural_g2p(word: str) -> list[str]:
-    """Pronunciation of a word missing from CMUdict, predicted by the g2p_en model."""
-    return [p for p in _g2p()(word) if p.strip()]
 
 
 def spell_out(word: str, lexicon: CMUDict) -> list[str]:
