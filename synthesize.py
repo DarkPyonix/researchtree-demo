@@ -23,13 +23,14 @@ def main() -> None:
     ap.add_argument("--acoustic", default="checkpoints/acoustic.pt")
     ap.add_argument("--vocoder", default="checkpoints/vocoder.pt")
     ap.add_argument("--threads", type=int, default=4)
+    ap.add_argument("--int8", action="store_true", help="quantize the acoustic model's linear layers to int8")
     ap.add_argument("--pitch-scale", type=float, default=1.0, help="multiply F0 by this factor (0.8 to 1.2)")
     args = ap.parse_args()
 
     cfg = yaml.safe_load(open("configs/acoustic.yaml"))
     model = FastSpeech2(cfg, len(SYMBOLS))
     model.load_state_dict(torch.load(args.acoustic, map_location="cpu"))
-    synth = Synthesizer(model, args.vocoder, threads=args.threads)
+    synth = Synthesizer(model, args.vocoder, threads=args.threads, int8=args.int8)
     sf.write(args.output, synth(args.text, pitch_scale=args.pitch_scale), synth.sample_rate)
 
 
