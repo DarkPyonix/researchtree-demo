@@ -85,7 +85,7 @@ class VarianceAdaptor(nn.Module):
         """
         return torch.clamp(p + math.log(scale) / self.log_f0_std, self.pitch_min, self.pitch_max)
 
-    def forward(self, x, mask, durations=None, pitch=None, energy=None, pitch_scale: float = 1.0,
+    def forward(self, x, mask, durations=None, pitch=None, energy=None, pitch_scale: float = 1.0, rate: float = 1.0,
                 mel=None, mel_mask=None, prior=None) -> VarianceOutput:
         log_duration = self.duration(x, mask)
         alignment = None
@@ -98,7 +98,8 @@ class VarianceAdaptor(nn.Module):
             pitch = average_by_duration(pitch, durations)
             energy = average_by_duration(energy, durations)
         if durations is None:
-            durations = torch.clamp(torch.round(torch.exp(log_duration) - 1), min=1).long()
+            # rate > 1 speaks faster: every predicted duration is divided by it before rounding.
+            durations = torch.clamp(torch.round((torch.exp(log_duration) - 1) / rate), min=1).long()
             durations = durations.masked_fill(mask, 0)
         # Pitch and energy are predicted per phoneme, before the length regulator, so every
         # frame of a phoneme gets the same pitch and energy embedding.
