@@ -90,6 +90,13 @@ The parts run in this order: encoder, phrase context, duration predictor, pitch 
 - Command line: `python synthesize.py "text" --pitch-scale 1.1`.
 - Evidence: experiment/pitch-control-range (#6), experiment/pitch-scale-clamp (#8).
 
+## CPU synthesis
+
+> `--int8` quantizes the linear layers of the encoder, variance adaptor and decoder to int8 when the model is loaded. The phrase context and the vocoder stay float32.
+
+- PyTorch dynamic quantization (`torch.ao.quantization.quantize_dynamic`): int8 weights, activations quantized at each call. No retraining.
+- Evidence: experiment/int8-cpu-inference (#33).
+
 ## Training
 
 > The acoustic model trains for 200k steps at batch size 32 on one 24 GB GPU, which takes about 3 days.
