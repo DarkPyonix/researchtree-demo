@@ -15,15 +15,30 @@ class PhraseContext(nn.Module):
         super().__init__()
         from transformers import AutoModel, AutoTokenizer
 
-        self.tokenizer = AutoTokenizer.from_pretrained(model_name)
-        self.text_model = AutoModel.from_pretrained(model_name).eval().requires_grad_(False)
-        self.proj = nn.Linear(self.text_model.config.hidden_size, hidden)
+        if model_name.endswith(".pt"):
+            # A distilled student (see distill_context.py): BERT-base's tokenizer and embeddings, small encoder.
+            from .context_student import StudentTextEncoder
+
+            self.tokenizer = AutoTokenizer.from_pretrained("bert-base-uncased")
+            teacher = AutoModel.from_pretrained("bert-base-uncased")
+            self.student = StudentTextEncoder(teacher.embeddings.word_embeddings)
+            self.student.load_state_dict(torch.load(model_name, map_location="cpu"))
+            self.text_model = None
+            size = 768
+        else:
+            self.tokenizer = AutoTokenizer.from_pretrained(model_name)
+            self.text_model = AutoModel.from_pretrained(model_name).eval().requires_grad_(False)
+            size = self.text_model.config.hidden_size
+        self.proj = nn.Linear(size, hidden)
 
     @torch.no_grad()
     def word_vectors(self, words: list[str]) -> torch.Tensor:
         """(words, text model size): the mean of each word's sub-word vectors from the last layer."""
         enc = self.tokenizer(words, is_split_into_words=True, return_tensors="pt").to(self.proj.weight.device)
-        states = self.text_model(**enc).last_hidden_state[0]
+        if self.text_model is None:
+            states = self.student(enc["input_ids"], enc["attention_mask"])[0]
+        else:
+            states = self.text_model(**enc).last_hidden_state[0]
         sums = torch.zeros(len(words), states.shape[-1], device=states.device)
         counts = torch.zeros(len(words), 1, device=states.device)
         for i, w in enumerate(enc.word_ids()):
