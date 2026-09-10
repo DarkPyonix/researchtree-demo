@@ -23,6 +23,7 @@ def main() -> None:
     ap.add_argument("--acoustic", default="checkpoints/acoustic.pt")
     ap.add_argument("--vocoder", default="checkpoints/vocoder.pt")
     ap.add_argument("--threads", type=int, default=4)
+    ap.add_argument("--rate", type=float, default=1.0, help="speaking rate: 1.25 is 25%% faster, 0.8 is 20%% slower")
     ap.add_argument("--pitch-scale", type=float, default=1.0, help="multiply F0 by this factor (0.8 to 1.2)")
     args = ap.parse_args()
 
@@ -30,7 +31,7 @@ def main() -> None:
     model = FastSpeech2(cfg, len(SYMBOLS))
     model.load_state_dict(torch.load(args.acoustic, map_location="cpu"))
     synth = Synthesizer(model, args.vocoder, threads=args.threads)
-    sf.write(args.output, synth(args.text, pitch_scale=args.pitch_scale), synth.sample_rate)
+    sf.write(args.output, synth(args.text, pitch_scale=args.pitch_scale, rate=args.rate), synth.sample_rate)
 
 
 if __name__ == "__main__":

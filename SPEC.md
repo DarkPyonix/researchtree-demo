@@ -82,11 +82,12 @@ The parts run in this order: encoder, phrase context, duration predictor, pitch 
 
 ## Inference controls
 
-> A user can shift the pitch of a whole sentence with one factor, `pitch_scale`, between 0.8 and 1.2.
+> A user can shift the pitch of a whole sentence with one factor, `pitch_scale`, between 0.8 and 1.2, and change its speed with another, `rate`, between 0.8 and 1.25.
 
 - `pitch_scale` multiplies the predicted F0 of every phoneme. Because pitch is stored as normalized log-F0, this adds log(pitch_scale) divided by the corpus standard deviation of log-F0 (0.183).
 - The shifted value is clamped to the 2nd to 98th percentile of the speaker's normalized phoneme pitch ([-2.1, 2.6]), so no phoneme leaves the speaker's range.
 - The measured pitch is never scaled, so training is unaffected.
+- `rate` divides every predicted duration before rounding; 1.25 is 25% faster. Pauses at punctuation scale the same way.
 - Command line: `python synthesize.py "text" --pitch-scale 1.1`.
 - Evidence: experiment/pitch-control-range (#6), experiment/pitch-scale-clamp (#8).
 

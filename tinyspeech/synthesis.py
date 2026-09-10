@@ -23,9 +23,9 @@ class Synthesizer:
         self.sample_rate = 22050
 
     @torch.no_grad()
-    def __call__(self, text: str, pitch_scale: float = 1.0) -> np.ndarray:
+    def __call__(self, text: str, pitch_scale: float = 1.0, rate: float = 1.0) -> np.ndarray:
         ph = phonemize(text, self.lexicon)
         ids = torch.tensor([ph.ids])
-        mel = self.model.synthesize(ids, pitch_scale=pitch_scale, words=[ph.words], word_ids=torch.tensor([ph.word_ids]))
+        mel = self.model.synthesize(ids, pitch_scale=pitch_scale, words=[ph.words], word_ids=torch.tensor([ph.word_ids]), rate=rate)
         wav = self.vocoder(mel.transpose(1, 2))
         return wav.squeeze().numpy()
