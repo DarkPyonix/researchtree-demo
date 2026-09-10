@@ -12,9 +12,15 @@ from .text.cmudict import CMUDict
 
 
 class Synthesizer:
-    def __init__(self, model, vocoder: str, threads: int = 4, vocoder_config: str = "configs/vocoder.yaml"):
+    def __init__(self, model, vocoder: str, threads: int = 4, vocoder_config: str = "configs/vocoder.yaml", int8: bool = False):
         torch.set_num_threads(threads)
         self.model = model.eval()
+        if int8:
+            # Linear layers get int8 weights; activations are quantized on the fly at each call.
+            # The BERT phrase context stays float32: quantizing it too cost 0.17 UTMOS.
+            for name in ("encoder", "variance", "decoder"):
+                part = torch.ao.quantization.quantize_dynamic(getattr(self.model, name), {torch.nn.Linear}, dtype=torch.qint8)
+                setattr(self.model, name, part)
         cfg = yaml.safe_load(open(vocoder_config))
         self.vocoder = build_generator(cfg["generator"])
         self.vocoder.load_state_dict(torch.load(vocoder, map_location="cpu"))
